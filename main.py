@@ -1,68 +1,122 @@
+import base64
 import re
+from datetime import datetime, timedelta
+from pprint import pprint
 
 import requests
-from oic import rndstr
+from getuseragent import UserAgent
 from oic.oic import Client
 from oic.utils.authn.client import CLIENT_AUTHN_METHOD
-from oic.utils.settings import OicClientSettings
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from seleniumwire import webdriver
 
-PHONE = ""
-PASSWORD = ""
-settings = OicClientSettings()#verify_ssl=False)
-client = Client(settings=settings, client_authn_method=CLIENT_AUTHN_METHOD, client_id="LidlPlusNativeClient")
-client.provider_config("https://accounts.lidl.com")
-code_challenge = client.add_code_challenge()
 
-session = {"state": rndstr(), "nonce": rndstr()}
-args = {
-    "client_id": client.client_id,
-    "response_type": "code",
-    "scope": ["openid profile offline_access lpprofile lpapis"],
-    # "nonce": session["nonce"],
-    "redirect_uri": 'com.lidlplus.app://callback',
-    # "state": session["state"]
-}
-args.update(code_challenge[0])
-auth_req = client.construct_AuthorizationRequest(request_args=args)
-login_url = auth_req.request(client.authorization_endpoint)
-mobile_emulation = {
-    "deviceMetrics": {"width": 360, "height": 640, "pixelRatio": 3.0},
-    "userAgent": "Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19"}
-option = webdriver.ChromeOptions()
-option.add_argument('headless')
-option.add_experimental_option("mobileEmulation", mobile_emulation)
-browser = webdriver.Chrome(options=option)
-browser.get(f"{login_url}&Country=DE&language=DE-DE")
-wait = WebDriverWait(browser, 10)
-wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
-wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(PHONE)
-browser.find_element(By.ID, "button_btn_submit_email").click()
-browser.find_element(By.ID, "button_btn_submit_email").click()
-wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(PASSWORD)
-browser.find_element(By.ID, "button_submit").click()
-element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, "phone")))
-element.find_element(By.TAG_NAME, "button").click()
-verify_code = input("Insert token: ")
-browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
-browser.find_element(By.CLASS_NAME, "role_next").click()
-code = re.findall("code=([0-9A-F]+)", browser.requests[-1].response.headers.get("Location", ""))[0]
-tokenurl = 'https://accounts.lidl.com/connect/token'
-headers = {
-    'Authorization': 'Basic TGlkbFBsdXNOYXRpdmVDbGllbnQ6c2VjcmV0',
-    'Content-Type': 'application/x-www-form-urlencoded'
-}
-payload = {
-    "grant_type": 'authorization_code',
-    "code": code,
-    "redirect_uri": 'com.lidlplus.app://callback',
-    "code_verifier": code_challenge[1]
-}
-response = requests.post(tokenurl, headers=headers, data=payload)
-access_token = response.json()["access_token"]
-refresh_token = response.json()["refresh_token"]
-print(access_token)
-print(refresh_token)
+class LidlApi:
+    _CLIENT_ID = "LidlPlusNativeClient"
+    _AUTH_SITE = "https://accounts.lidl.com"
+    _APP = "com.lidlplus.app"
+    _OS = "iOs"
+
+    def __init__(self, refresh_token=""):
+        self._login_url = ""
+        self._code_verifier = ""
+        self._refresh_token = refresh_token
+        self._expires = None
+        self._token = ""
+
+    def _get_login_url(self):
+        if self._login_url:
+            return self._login_url
+        client = Client(client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID)
+        client.provider_config(self._AUTH_SITE)
+        code_challenge, self._code_verifier = client.add_code_challenge()
+        args = {
+            "client_id": client.client_id,
+            "response_type": "code",
+            "scope": ["openid profile offline_access lpprofile lpapis"],
+            "redirect_uri": f'{self._APP}://callback',
+            **code_challenge
+        }
+        auth_req = client.construct_AuthorizationRequest(request_args=args)
+        self._login_url = auth_req.request(client.authorization_endpoint)
+        return self._login_url
+
+    def _get_browser(self, headless=True):
+        user_agent = UserAgent(self._OS.lower()).Random()
+        try:
+            options = webdriver.ChromeOptions()
+            if headless:
+                options.add_argument('headless')
+            options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
+            return webdriver.Chrome(options=options)
+        except Exception:
+            options = webdriver.FirefoxOptions()
+            if headless:
+                options.headless = True
+            options.add_argument(f"user-agent={user_agent}")
+            return webdriver.Firefox(options=options)
+
+    def _auth(self, payload):
+        headers = {
+            'Authorization': f'Basic {base64.b64encode(f"{self._CLIENT_ID}:secret".encode()).decode()}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        response = requests.post(f"{self._AUTH_SITE}/connect/token", headers=headers, data=payload).json()
+        self._expires = datetime.now() + timedelta(seconds=response["expires_in"])
+        self._token = response["access_token"]
+        self._refresh_token = response["refresh_token"]
+
+    def _renew_token(self):
+        payload = {'refresh_token': self._refresh_token, 'grant_type': 'refresh_token'}
+        return self._auth(payload)
+
+    def _authorization_code(self, code):
+        payload = {
+            "grant_type": 'authorization_code',
+            "code": code,
+            "redirect_uri": f'{self._APP}://callback',
+            "code_verifier": self._code_verifier
+        }
+        return self._auth(payload)
+
+    def login(self, phone, password, country, language, verify_token_func):
+        browser = self._get_browser()
+        browser.get(f"{self._get_login_url()}&Country={country}&language={language}")
+        wait = WebDriverWait(browser, 10)
+        wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
+        wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
+        browser.find_element(By.ID, "button_btn_submit_email").click()
+        browser.find_element(By.ID, "button_btn_submit_email").click()
+        wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
+        browser.find_element(By.ID, "button_submit").click()
+        element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, "phone")))
+        element.find_element(By.TAG_NAME, "button").click()
+        verify_code = verify_token_func()
+        browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
+        browser.find_element(By.CLASS_NAME, "role_next").click()
+        code = re.findall("code=([0-9A-F]+)", browser.requests[-1].response.headers.get("Location", ""))[0]
+        self._authorization_code(code)
+
+    def _default_headers(self):
+        if not self._token:
+            raise Exception("You need to login!")
+        return {'Authorization': f'Bearer {self._token}',
+                'App-Version': '999.99.9',
+                'Operating-System': self._OS,
+                'App': 'com.lidl.eci.lidl.plus',
+                'Accept-Language': "DE"
+                }
+
+    def tickets(self, language="DE"):
+        url = f"https://tickets.lidlplus.com/api/v1/{language}/list"
+        ticket = requests.get(f"{url}/1", headers=self._default_headers()).json()
+        tickets = ticket['records']
+        for i in range(2, int(ticket['totalCount'] / ticket['size'] + 2)):
+            tickets += requests.get(f"{url}/{i}", headers=self._default_headers()).json()['records']
+        return tickets
+
+    def ticket(self, ticket_id, language="DE"):
+        url = f"https://tickets.lidlplus.com/api/v1/{language}/tickets"
+        return requests.get(f"{url}/{ticket_id}", headers=self._default_headers()).json()
