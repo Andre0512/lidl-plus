@@ -5,20 +5,21 @@ from datetime import datetime, timedelta
 import requests
 
 
-class LidlApi:
+class LidlPlusApi:
     _CLIENT_ID = "LidlPlusNativeClient"
     _AUTH_API = "https://accounts.lidl.com"
     _TICKET_API = "https://tickets.lidlplus.com/api/v1"
     _APP = "com.lidlplus.app"
     _OS = "iOs"
 
-    def __init__(self, refresh_token="", language="DE"):
+    def __init__(self, language, country, refresh_token=""):
         self._login_url = ""
         self._code_verifier = ""
         self._refresh_token = refresh_token
         self._expires = None
         self._token = ""
-        self._language = language
+        self._country = country
+        self._language = f"{language.lower()}-{country.upper()}"
 
     @property
     def refresh_token(self):
@@ -87,12 +88,12 @@ class LidlApi:
         }
         return self._auth(payload)
 
-    def login(self, phone, password, country, language, verify_token_func):
+    def login(self, phone, password, verify_token_func):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions
         from selenium.webdriver.support.ui import WebDriverWait
         browser = self._get_browser()
-        browser.get(f"{self._register_oauth_client()}&Country={country}&language={language}")
+        browser.get(f"{self._register_oauth_client()}&Country={self._country}&language={self._language}")
         wait = WebDriverWait(browser, 10)
         wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
         wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
@@ -121,7 +122,7 @@ class LidlApi:
                 }
 
     def tickets(self):
-        url = f"{self._TICKET_API}/{self._language}/list"
+        url = f"{self._TICKET_API}/{self._country}/list"
         ticket = requests.get(f"{url}/1", headers=self._default_headers()).json()
         tickets = ticket['records']
         for i in range(2, int(ticket['totalCount'] / ticket['size'] + 2)):
@@ -129,5 +130,5 @@ class LidlApi:
         return tickets
 
     def ticket(self, ticket_id):
-        url = f"{self._TICKET_API}/{self._language}/tickets"
+        url = f"{self._TICKET_API}/{self._country}/tickets"
         return requests.get(f"{url}/{ticket_id}", headers=self._default_headers()).json()
