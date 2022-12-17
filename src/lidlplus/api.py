@@ -18,8 +18,8 @@ class LidlPlusApi:
         self._refresh_token = refresh_token
         self._expires = None
         self._token = ""
-        self._country = country
-        self._language = f"{language.lower()}-{country.upper()}"
+        self._country = country.upper()
+        self._language = language.lower()
 
     @property
     def refresh_token(self):
@@ -93,7 +93,7 @@ class LidlPlusApi:
         from selenium.webdriver.support import expected_conditions
         from selenium.webdriver.support.ui import WebDriverWait
         browser = self._get_browser()
-        browser.get(f"{self._register_oauth_client()}&Country={self._country}&language={self._language}")
+        browser.get(f"{self._register_oauth_client()}&Country={self._country}&language={self._language}-{self._country}")
         wait = WebDriverWait(browser, 10)
         wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
         wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)

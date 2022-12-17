@@ -7,9 +7,9 @@ with open("README.md", "r") as f:
 
 setup(
     name="lidl-plus",
-    version="0.1.7",
+    version="0.1.9",
     author="Andre Basche",
-    description="Lidl Plus api",
+    description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
     long_description_content_type='text/markdown',
     url="https://github.com/Andre0512/lidl-plus",

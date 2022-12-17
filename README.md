@@ -1,6 +1,7 @@
 **This python package is unofficial and is not related in any way to Lidl. It was developed by reversed engineered requests and can stop working at anytime!**
 
 # Python Lidl Plus API
+Fetch receipts and more from Lidl Plus.
 ## Installation
 ```commandline
 pip install lidl-plus
@@ -36,11 +37,42 @@ lidl.login(phone="+4915784632296", password="password", verify_token_func=lambda
 print(lidl.refresh_token)
 ```
 ## Usage
-#### Get tickets
+Currently, the only feature is fetching receipts
+### Receipts
+
+Get your receipts as json and receive a list of bought items like: 
+```json
+{
+    "currentUnitPrice": "2,19",
+    "quantity": "1",
+    "isWeight": false,
+    "originalAmount": "2,19",
+    "extendedAmount": "1,98",
+    "description": "Vegane Frikadellen",
+    "taxGroup": "1",
+    "taxGroupName": "A",
+    "codeInput": "4023456245134",
+    "discounts": [
+        {
+            "description": "5€ Coupon",
+            "amount": "0,21"
+        }
+    ],
+    "deposit": null,
+    "giftSerialNumber": null
+},
+```
+
+#### Commandline
+```commandline
+$ lidl-plus --country=de --language=DE --refresh-token=XXXXX receipt --all > data.json
+```
+
+#### Python
 ```python
 from lidlplus import LidlPlusApi
 
 lidl = LidlPlusApi("DE", "de", refresh_token="XXXXXXXXXX")
-for ticket in lidl.tickets():
-    print(lidl.ticket(ticket["id"]))
+for receipt in lidl.tickets():
+    pprint(lidl.ticket(receipt["id"]))
 ```
