@@ -1,8 +1,13 @@
 import base64
+import logging
 import re
 from datetime import datetime, timedelta
 
 import requests
+
+
+class WebBrowserException(Exception):
+    pass
 
 
 class LidlPlusApi:
@@ -48,22 +53,41 @@ class LidlPlusApi:
         self._login_url = auth_req.request(client.authorization_endpoint)
         return self._login_url
 
-    def _get_browser(self, headless=True):
+    def _init_chrome(self, headless=True):
         from seleniumwire import webdriver
         from getuseragent import UserAgent
+        from webdriver_manager.chrome import ChromeDriverManager
+        from selenium.webdriver.chrome.service import Service as ChromeService
         user_agent = UserAgent(self._OS.lower()).Random()
+        logging.getLogger('WDM').setLevel(logging.NOTSET)
+        options = webdriver.ChromeOptions()
+        if headless:
+            options.add_argument('headless')
+        options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
+        return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+
+    def _init_firefox(self, headless=True):
+        from seleniumwire import webdriver
+        from getuseragent import UserAgent
+        from webdriver_manager.firefox import GeckoDriverManager
+        user_agent = UserAgent(self._OS.lower()).Random()
+        logging.getLogger('WDM').setLevel(logging.NOTSET)
+        options = webdriver.FirefoxOptions()
+        if headless:
+            options.headless = True
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference("general.useragent.override", user_agent)
+        return webdriver.Firefox(executable_path=GeckoDriverManager().install(), firefox_binary="/usr/bin/firefox",
+                                 options=options, firefox_profile=profile)
+
+    def _get_browser(self, headless=True):
         try:
-            options = webdriver.ChromeOptions()
-            if headless:
-                options.add_argument('headless')
-            options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
-            return webdriver.Chrome(options=options)
+            return self._init_chrome(headless=headless)
         except Exception:
-            options = webdriver.FirefoxOptions()
-            if headless:
-                options.headless = True
-            options.add_argument(f"user-agent={user_agent}")
-            return webdriver.Firefox(options=options)
+            try:
+                return self._init_firefox(headless=headless)
+            except Exception:
+                raise WebBrowserException
 
     def _auth(self, payload):
         headers = {
@@ -88,11 +112,11 @@ class LidlPlusApi:
         }
         return self._auth(payload)
 
-    def login(self, phone, password, verify_token_func):
+    def login(self, phone, password, verify_token_func, headless=True):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions
         from selenium.webdriver.support.ui import WebDriverWait
-        browser = self._get_browser()
+        browser = self._get_browser(headless=headless)
         browser.get(f"{self._register_oauth_client()}&Country={self._country}&language={self._language}-{self._country}")
         wait = WebDriverWait(browser, 10)
         wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()

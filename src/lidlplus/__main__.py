@@ -7,9 +7,10 @@ from pathlib import Path
 
 if __name__ == '__main__':
     sys.path.append(str(Path(__file__).parent))
-    from api import LidlPlusApi
+    from api import LidlPlusApi, WebBrowserException
 else:
     from lidlplus import LidlPlusApi
+    from lidlplus.api import WebBrowserException
 
 
 def get_arguments():
@@ -50,7 +51,11 @@ def lidl_plus_login(args):
     password = args.get("password") or getpass("Enter your lidl plus password: ")
     check_auth()
     lidl_plus = LidlPlusApi(language, country)
-    lidl_plus.login(username, password, lambda: input("Enter your verify code: "))
+    try:
+        lidl_plus.login(username, password, lambda: input("Enter your verify code: "))
+    except WebBrowserException:
+        print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
+        exit(101)
     return lidl_plus
 
 

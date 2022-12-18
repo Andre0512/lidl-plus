@@ -1,7 +1,8 @@
 .idea/
 __pycache__/
-venv/
-test.py
-*.json
 dist/
+venv/
+*.json
+*.log
 **/*.egg-info/
+test.py

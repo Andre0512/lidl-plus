@@ -2,3 +2,4 @@ getuseragent
 oic
 requests
 selenium-wire
+webdriver-manager

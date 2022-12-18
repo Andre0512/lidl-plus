@@ -3,23 +3,26 @@
 # Python Lidl Plus API
 Fetch receipts and more from Lidl Plus.
 ## Installation
-```commandline
+```bash
 pip install lidl-plus
 ```
 
 ## Authentication
 To login in Lidl Plus we need to simulate the app login.
-This is a bit complicated, we need a web browser (Currently only Google Chrome supported) and some additional python packages.
+This is a bit complicated, we need a web browser and some additional python packages.
 After we have received the token once, we can use it for further requestes and we don't need a browser anymore.
 
 #### Prerequisites
-* Check you have installed **Google Chrome**
+* Check you have installed one of the supported web browser
+  - Chromium
+  - Google Chrome
+  - Mozilla Firefox
 * Install additional python packages
-  ```commandline
+  ```bash
   pip install "lidl-plus[auth]"
   ```
 #### Commandline-Tool
-```commandline
+```bash
 $ lidl-plus auth
 Enter your lidl plus username (phone number): +4915784632296
 Enter your lidl plus password: 
@@ -66,8 +69,8 @@ Get your receipts as json and receive a list of bought items like:
 },
 ```
 
-#### Commandline
-```commandline
+#### Commandline-Tool
+```bash
 $ lidl-plus --country=de --language=DE --refresh-token=XXXXX receipt --all > data.json
 ```
 
