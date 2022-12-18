@@ -112,10 +112,12 @@ class LidlPlusApi:
         }
         return self._auth(payload)
 
-    def login(self, phone, password, verify_token_func, headless=True):
+    def login(self, phone, password, verify_token_func, headless=True, verify_mode="phone"):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions
         from selenium.webdriver.support.ui import WebDriverWait
+        if verify_mode not in ["phone", "email"]:
+            raise ValueError("Only \"phone\" or \"email\" supported")
         browser = self._get_browser(headless=headless)
         browser.get(f"{self._register_oauth_client()}&Country={self._country}&language={self._language}-{self._country}")
         wait = WebDriverWait(browser, 10)
@@ -125,7 +127,7 @@ class LidlPlusApi:
         browser.find_element(By.ID, "button_btn_submit_email").click()
         wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
         browser.find_element(By.ID, "button_submit").click()
-        element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, "phone")))
+        element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
         element.find_element(By.TAG_NAME, "button").click()
         verify_code = verify_token_func()
         browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)

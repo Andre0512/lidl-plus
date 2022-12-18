@@ -20,6 +20,7 @@ def get_arguments():
     parser.add_argument("-l", "--language", help="language (de, be, nl, at, ...)")
     parser.add_argument("-u", "--user", help="Lidl Plus login user")
     parser.add_argument("-p", "--password", help="Lidl Plus login password")
+    parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="set 2fa method")
     parser.add_argument("-r", "--refresh-token", help="refresh token to authenticate")
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get refresh_token")
@@ -52,7 +53,8 @@ def lidl_plus_login(args):
     check_auth()
     lidl_plus = LidlPlusApi(language, country)
     try:
-        lidl_plus.login(username, password, lambda: input("Enter your verify code: "))
+        text = f"Enter the verify code you received via {args['2fa']}: "
+        lidl_plus.login(username, password, lambda: input(text), verify_mode=args["2fa"])
     except WebBrowserException:
         print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
         exit(101)

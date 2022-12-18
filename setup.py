@@ -7,7 +7,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="lidl-plus",
-    version="0.1.12",
+    version="0.1.14",
     author="Andre Basche",
     description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
@@ -23,7 +23,7 @@ setup(
     extras_require={
         "auth": [
             "selenium-wire",
-            "webdriver-manager"
+            "webdriver-manager",
             "getuseragent",
             "oic"
         ]

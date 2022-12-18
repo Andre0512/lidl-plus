@@ -24,11 +24,11 @@ After we have received the token once, we can use it for further requestes and w
 #### Commandline-Tool
 ```bash
 $ lidl-plus auth
-Enter your lidl plus username (phone number): +4915784632296
-Enter your lidl plus password: 
 Enter your language (DE, EN, ...): DE
 Enter your country (de, at, ...): de
-Enter your verify code: 590287
+Enter your lidl plus username (phone number): +4915784632296
+Enter your lidl plus password:
+Enter the verify code you received via phone: 590287
 ------------------------- refresh token ------------------------
 2D4FC2A699AC703CAB8D017012658234917651203746021A4AA3F735C8A53B7F
 ----------------------------------------------------------------
