@@ -7,15 +7,18 @@ Fetch receipts and more from Lidl Plus.
 pip install lidl-plus
 ```
 
-## Generate refresh token
+## Authentication
+To login in Lidl Plus we need to simulate the app login.
+This is a bit complicated, we need a web browser (Currently only Google Chrome supported) and some additional python packages.
+After we have received the token once, we can use it for further requestes and we don't need a browser anymore.
 
 #### Prerequisites
-You need to install *Google Chrome* and some additional python packages to generate.
-```commandline
-pip install "lidl-plus[auth]"
-```
+* Check you have installed **Google Chrome**
+* Install additional python packages
+  ```commandline
+  pip install "lidl-plus[auth]"
+  ```
 #### Commandline-Tool
-You can use the commandline tool `lidl-plus` to generate a Lidl Plus refresh token once on a device with Google Chrome.
 ```commandline
 $ lidl-plus auth
 Enter your lidl plus username (phone number): +4915784632296
