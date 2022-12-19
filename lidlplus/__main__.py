@@ -6,11 +6,9 @@ from getpass import getpass
 from pathlib import Path
 
 if __name__ == '__main__':
-    sys.path.append(str(Path(__file__).parent))
-    from api import LidlPlusApi, WebBrowserException
-else:
-    from lidlplus import LidlPlusApi
-    from lidlplus.api import WebBrowserException
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+from lidlplus import LidlPlusApi
+from lidlplus.exceptions import WebBrowserException, LoginError
 
 
 def get_arguments():
@@ -58,6 +56,9 @@ def lidl_plus_login(args):
     except WebBrowserException:
         print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
         exit(101)
+    except LoginError:
+        print("Login failed. Check your username and password")
+        exit(102)
     return lidl_plus
 
 
@@ -84,5 +85,12 @@ def main():
         print_tickets(args)
 
 
+def start():
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Aborted.")
+
+
 if __name__ == '__main__':
-    main()
+    start()

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(
     name="lidl-plus",
-    version="0.1.14",
+    version="0.1.16",
     author="Andre Basche",
     description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
@@ -15,8 +15,7 @@ setup(
     url="https://github.com/Andre0512/lidl-plus",
     license="MIT",
     platforms="any",
-    package_dir={"": "src"},
-    packages=["lidlplus"],
+    packages=find_packages(),
     include_package_data=True,
     python_requires=">=3.8",
     install_requires=["requests"],
@@ -30,7 +29,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'lidl-plus = lidlplus.__main__:main',
+            'lidl-plus = lidlplus.__main__:start',
         ]
     }
 )

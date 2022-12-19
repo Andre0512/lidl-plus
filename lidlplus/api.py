@@ -5,9 +5,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-
-class WebBrowserException(Exception):
-    pass
+from lidlplus.exceptions import WebBrowserException, LoginError
 
 
 class LidlPlusApi:
@@ -116,6 +114,7 @@ class LidlPlusApi:
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions
         from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.common.exceptions import TimeoutException
         if verify_mode not in ["phone", "email"]:
             raise ValueError("Only \"phone\" or \"email\" supported")
         browser = self._get_browser(headless=headless)
@@ -125,9 +124,12 @@ class LidlPlusApi:
         wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
         browser.find_element(By.ID, "button_btn_submit_email").click()
         browser.find_element(By.ID, "button_btn_submit_email").click()
-        wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
-        browser.find_element(By.ID, "button_submit").click()
-        element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+        try:
+            wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
+            browser.find_element(By.ID, "button_submit").click()
+            element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+        except TimeoutException:
+            raise LoginError("Wrong credentials")
         element.find_element(By.TAG_NAME, "button").click()
         verify_code = verify_token_func()
         browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
