@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+lidl plus command line tool
+"""
 import argparse
 import json
 import sys
@@ -7,6 +10,7 @@ from pathlib import Path
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
+# pylint: disable=wrong-import-position
 from lidlplus import LidlPlusApi
 from lidlplus.exceptions import WebBrowserException, LoginError
 
@@ -36,10 +40,12 @@ def get_arguments():
 
 
 def check_auth():
+    """check auth package is installed"""
     try:
+        # pylint: disable=import-outside-toplevel, unused-import
         import oic
         import seleniumwire
-        import getpass
+        import getuseragent
         import webdriver_manager
     except ImportError:
         print(
@@ -47,10 +53,11 @@ def check_auth():
             '  pip install "lidl-plus[auth]"\n'
             "You also need google chrome to be installed."
         )
-        exit(1)
+        sys.exit(1)
 
 
 def lidl_plus_login(args):
+    """handle authentication"""
     language = args.get("language") or input("Enter your language (DE, EN, ...): ")
     country = args.get("country") or input("Enter your country (de, at, ...): ")
     if args.get("refresh_token"):
@@ -70,22 +77,26 @@ def lidl_plus_login(args):
         print(
             "Can't connect to web browser. Please install Chrome, Chromium or Firefox"
         )
-        exit(101)
+        sys.exit(101)
     except LoginError:
         print("Login failed. Check your username and password")
-        exit(102)
+        sys.exit(102)
     return lidl_plus
 
 
 def print_refresh_token(args):
+    """pretty print refresh token"""
     lidl_plus = lidl_plus_login(args)
     length = len(token := lidl_plus.refresh_token) - len("refresh token")
     print(
-        f"{'-' * (length // 2)} refresh token {'-' * (length // 2 - 1)}\n{token}\n{'-' * len(token)}"
+        f"{'-' * (length // 2)} refresh token {'-' * (length // 2 - 1)}\n"
+        f"{token}\n"
+        f"{'-' * len(token)}"
     )
 
 
 def print_tickets(args):
+    """pretty print as json"""
     lidl_plus = lidl_plus_login(args)
     if args.get("all"):
         tickets = [lidl_plus.ticket(ticket["id"]) for ticket in lidl_plus.tickets()]
@@ -95,6 +106,7 @@ def print_tickets(args):
 
 
 def main():
+    """argument commands"""
     args = get_arguments()
     if args.get("auth"):
         print_refresh_token(args)
@@ -103,6 +115,7 @@ def main():
 
 
 def start():
+    """wrapper for cmd tool"""
     try:
         main()
     except KeyboardInterrupt:

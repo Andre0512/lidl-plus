@@ -1,6 +1,11 @@
+"""
+Exeptions
+"""
+
+
 class WebBrowserException(Exception):
-    pass
+    """No Browser installed"""
 
 
 class LoginError(Exception):
-    pass
+    """Login failed"""
