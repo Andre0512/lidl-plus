@@ -59,9 +59,7 @@ class LidlPlusApi:
 
         if self._login_url:
             return self._login_url
-        client = Client(
-            client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID
-        )
+        client = Client(client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID)
         client.provider_config(self._AUTH_API)
         code_challenge, self._code_verifier = client.add_code_challenge()
         args = {
@@ -82,9 +80,7 @@ class LidlPlusApi:
         if headless:
             options.add_argument("headless")
         options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
-        return webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()), options=options
-        )
+        return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
 
     def _init_firefox(self, headless=True):
 
@@ -153,16 +149,14 @@ class LidlPlusApi:
         browser = self._get_browser(headless=kwargs.get("headless", True))
         browser.get(self._register_link)
         wait = WebDriverWait(browser, 10)
-        is_visible = expected_conditions.visibility_of_element_located
-        is_clickable = expected_conditions.element_to_be_clickable
-        wait.until(is_visible((By.ID, "button_welcome_login"))).click()
-        wait.until(is_visible((By.NAME, "EmailOrPhone"))).send_keys(phone)
+        wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
+        wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
         browser.find_element(By.ID, "button_btn_submit_email").click()
         browser.find_element(By.ID, "button_btn_submit_email").click()
         try:
-            wait.until(is_clickable((By.ID, "field_Password"))).send_keys(password)
+            wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
             browser.find_element(By.ID, "button_submit").click()
-            element = wait.until(is_visible((By.CLASS_NAME, verify_mode)))
+            element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
         except TimeoutException as exc:
             raise LoginError("Wrong credentials") from exc
         element.find_element(By.TAG_NAME, "button").click()
@@ -174,9 +168,7 @@ class LidlPlusApi:
         self._authorization_code(code)
 
     def _default_headers(self):
-        if (
-            not self._token and self._refresh_token
-        ) or datetime.utcnow() >= self._expires:
+        if (not self._token and self._refresh_token) or datetime.utcnow() >= self._expires:
             self._renew_token()
         if not self._token:
             raise Exception("You need to login!")
