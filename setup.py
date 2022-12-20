@@ -23,9 +23,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8",
     install_requires=["requests"],
-    extras_require={
-        "auth": ["selenium-wire", "webdriver-manager", "getuseragent", "oic"]
-    },
+    extras_require={"auth": ["selenium-wire", "webdriver-manager", "getuseragent", "oic"]},
     entry_points={
         "console_scripts": [
             "lidl-plus = lidlplus.__main__:start",
