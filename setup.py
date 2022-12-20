@@ -15,7 +15,7 @@ setup(
     author="Andre Basche",
     description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url="https://github.com/Andre0512/lidl-plus",
     license="MIT",
     platforms="any",
@@ -24,16 +24,11 @@ setup(
     python_requires=">=3.8",
     install_requires=["requests"],
     extras_require={
-        "auth": [
-            "selenium-wire",
-            "webdriver-manager",
-            "getuseragent",
-            "oic"
-        ]
+        "auth": ["selenium-wire", "webdriver-manager", "getuseragent", "oic"]
     },
     entry_points={
-        'console_scripts': [
-            'lidl-plus = lidlplus.__main__:start',
+        "console_scripts": [
+            "lidl-plus = lidlplus.__main__:start",
         ]
-    }
+    },
 )
