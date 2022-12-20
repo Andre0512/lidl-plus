@@ -16,7 +16,7 @@ setup(
     description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Andre0512/lidl-plus",
+    project_urls={"GitHub": "https://github.com/Andre0512/lidl-plus", "PyPI": "https://pypi.org/project/lidl-plus/"},
     license="MIT",
     platforms="any",
     packages=find_packages(),
