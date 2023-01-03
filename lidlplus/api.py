@@ -139,12 +139,12 @@ class LidlPlusApi:
             "Country": self._country,
             "language": f"{self._language}-{self._country}",
         }
-        params = "&".join([f"{key}={value}" for key, value in args])
+        params = "&".join([f"{key}={value}" for key, value in args.items()])
         return f"{self._register_oauth_client()}&{params}"
 
     def login(self, phone, password, verify_token_func, **kwargs):
         """Simulate app auth"""
-        if verify_mode := kwargs.get("verify_mode", "phone") not in ["phone", "email"]:
+        if (verify_mode := kwargs.get("verify_mode", "phone")) not in ["phone", "email"]:
             raise ValueError('Only "phone" or "email" supported')
         browser = self._get_browser(headless=kwargs.get("headless", True))
         browser.get(self._register_link)
