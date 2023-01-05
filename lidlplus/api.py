@@ -2,6 +2,8 @@
 Lidl Plus api
 """
 import base64
+import html
+import json
 import logging
 import re
 from datetime import datetime, timedelta
@@ -20,6 +22,7 @@ try:
     from selenium.webdriver.support import expected_conditions
     from selenium.webdriver.support.ui import WebDriverWait
     from seleniumwire import webdriver
+    from seleniumwire.utils import decode
     from webdriver_manager.chrome import ChromeDriverManager
     from webdriver_manager.firefox import GeckoDriverManager
 except ImportError:
@@ -142,6 +145,15 @@ class LidlPlusApi:
         params = "&".join([f"{key}={value}" for key, value in args.items()])
         return f"{self._register_oauth_client()}&{params}"
 
+    def search_code(self, all_request):
+        for request in reversed(all_request):
+            if f"{self._AUTH_API}/connect" not in request.url:
+                continue
+            location = request.response.headers.get("Location", "")
+            if code := re.findall("code=([0-9A-F]+)", location):
+                return code[0]
+        return ""
+
     def login(self, phone, password, verify_token_func, **kwargs):
         """Simulate app auth"""
         if (verify_mode := kwargs.get("verify_mode", "phone")) not in ["phone", "email"]:
@@ -155,16 +167,24 @@ class LidlPlusApi:
         browser.find_element(By.ID, "button_btn_submit_email").click()
         try:
             wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
+            del browser.requests
             browser.find_element(By.ID, "button_submit").click()
-            element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+            response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 100).response
+            body = html.unescape(decode(response.body, response.headers.get('Content-Encoding', 'identity')).decode())
+            if error := re.findall('app-errors="(\{.*?})', body):
+                print("\n".join([f"{k}-Error: {v}" for k, v in json.loads(error[0]).items()]))
+                return
+            elif "/connect/authorize/callback" in response.headers.get("Location"):
+                code = self.search_code(browser.requests)
+            else:
+                element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+                element.find_element(By.TAG_NAME, "button").click()
+                verify_code = verify_token_func()
+                browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
+                browser.find_element(By.CLASS_NAME, "role_next").click()
+                code = self.search_code(browser.requests)
         except TimeoutException as exc:
             raise LoginError("Wrong credentials") from exc
-        element.find_element(By.TAG_NAME, "button").click()
-        verify_code = verify_token_func()
-        browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
-        browser.find_element(By.CLASS_NAME, "role_next").click()
-        last_request = browser.requests[-1].response.headers.get("Location", "")
-        code = re.findall("code=([0-9A-F]+)", last_request)[0]
         self._authorization_code(code)
 
     def _default_headers(self):
