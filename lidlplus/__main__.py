@@ -62,12 +62,12 @@ def lidl_plus_login(args):
     lidl_plus = LidlPlusApi(language, country)
     try:
         text = f"Enter the verify code you received via {args['2fa']}: "
-        lidl_plus.login(username, password, lambda: input(text), verify_mode=args["2fa"])
+        lidl_plus.login(username, password, verify_token_func=lambda: input(text), verify_mode=args["2fa"])
     except WebBrowserException:
         print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
         sys.exit(101)
-    except LoginError:
-        print("Login failed. Check your username and password")
+    except LoginError as error:
+        print(f"Login failed - {error}")
         sys.exit(102)
     return lidl_plus
 

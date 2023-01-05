@@ -3,7 +3,6 @@ Lidl Plus api
 """
 import base64
 import html
-import json
 import logging
 import re
 from datetime import datetime, timedelta
@@ -16,7 +15,6 @@ try:
     from getuseragent import UserAgent
     from oic.oic import Client
     from oic.utils.authn.client import CLIENT_AUTHN_METHOD
-    from selenium.common.exceptions import TimeoutException
     from selenium.webdriver.chrome.service import Service as ChromeService
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions
@@ -145,7 +143,7 @@ class LidlPlusApi:
         params = "&".join([f"{key}={value}" for key, value in args.items()])
         return f"{self._register_oauth_client()}&{params}"
 
-    def search_code(self, all_request):
+    def _parse_code(self, all_request):
         for request in reversed(all_request):
             if f"{self._AUTH_API}/connect" not in request.url:
                 continue
@@ -154,37 +152,53 @@ class LidlPlusApi:
                 return code[0]
         return ""
 
-    def login(self, phone, password, verify_token_func, **kwargs):
+    def _click(self, browser, button, request=""):
+        del browser.requests
+        browser.backend.storage.clear_requests()
+        browser.find_element(*button).click()
+        self._check_input_error(browser)
+        if request and browser.wait_for_request(request, 10):
+            self._check_input_error(browser)
+
+    @staticmethod
+    def _check_input_error(browser):
+        if errors := browser.find_elements(By.CLASS_NAME, "input-error-message"):
+            for error in errors:
+                if error.text:
+                    raise LoginError(error.text)
+
+    def _check_login_error(self, browser):
+        response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 10).response
+        body = html.unescape(decode(response.body, response.headers.get("Content-Encoding", "identity")).decode())
+        if error := re.findall('app-errors="\\{[^:]*?:.(.*?).}', body):
+            raise LoginError(error[0])
+
+    def _check_2fa_auth(self, browser, wait, verify_mode="phone", verify_token_func=None):
+        if verify_mode not in ["phone", "email"]:
+            raise ValueError(f'Unknown 2fa-mode "{verify_mode}" - Only "phone" or "email" supported')
+        response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 10).response
+        if "/connect/authorize/callback" not in response.headers.get("Location"):
+            element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+            element.find_element(By.TAG_NAME, "button").click()
+            verify_code = verify_token_func()
+            browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
+            self._click(browser, (By.CLASS_NAME, "role_next"))
+
+    def login(self, phone, password, **kwargs):
         """Simulate app auth"""
-        if (verify_mode := kwargs.get("verify_mode", "phone")) not in ["phone", "email"]:
-            raise ValueError('Only "phone" or "email" supported')
         browser = self._get_browser(headless=kwargs.get("headless", True))
         browser.get(self._register_link)
         wait = WebDriverWait(browser, 10)
         wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
         wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
-        browser.find_element(By.ID, "button_btn_submit_email").click()
-        browser.find_element(By.ID, "button_btn_submit_email").click()
-        try:
-            wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
-            del browser.requests
-            browser.find_element(By.ID, "button_submit").click()
-            response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 100).response
-            body = html.unescape(decode(response.body, response.headers.get('Content-Encoding', 'identity')).decode())
-            if error := re.findall('app-errors="(\{.*?})', body):
-                print("\n".join([f"{k}-Error: {v}" for k, v in json.loads(error[0]).items()]))
-                return
-            elif "/connect/authorize/callback" in response.headers.get("Location"):
-                code = self.search_code(browser.requests)
-            else:
-                element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
-                element.find_element(By.TAG_NAME, "button").click()
-                verify_code = verify_token_func()
-                browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
-                browser.find_element(By.CLASS_NAME, "role_next").click()
-                code = self.search_code(browser.requests)
-        except TimeoutException as exc:
-            raise LoginError("Wrong credentials") from exc
+        self._click(browser, (By.ID, "button_btn_submit_email"))
+        self._click(browser, (By.ID, "button_btn_submit_email"), request=f"{self._AUTH_API}/api/phone/exists.*")
+        wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
+        self._click(browser, (By.ID, "button_submit"))
+        self._check_login_error(browser)
+        self._check_2fa_auth(browser, wait, kwargs.get("verify_mode", "phone"), kwargs.get("verify_token_func"))
+        browser.wait_for_request(f"{self._AUTH_API}/connect.*")
+        code = self._parse_code(browser.requests)
         self._authorization_code(code)
 
     def _default_headers(self):
