@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 # pylint: disable=wrong-import-position
 from lidlplus import LidlPlusApi
-from lidlplus.exceptions import WebBrowserException, LoginError
+from lidlplus.exceptions import WebBrowserException, LoginError, LegalTermsException
 
 
 def get_arguments():
@@ -26,6 +26,8 @@ def get_arguments():
     parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="set 2fa method")
     parser.add_argument("-r", "--refresh-token", help="refresh token to authenticate")
     parser.add_argument("--skip-verify", help="skip ssl verification", action="store_true")
+    parser.add_argument("--not-accept-legal-terms", help="Deny legal terms updates", action="store_true")
+    parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get refresh_token")
     auth.add_argument("auth", help="authenticate and get refresh_token", action="store_true")
@@ -63,18 +65,28 @@ def lidl_plus_login(args):
     country = args.get("country") or input("Enter your country (de, at, ...): ")
     if args.get("refresh_token"):
         return LidlPlusApi(language, country, args.get("refresh_token"))
-    username = args.get("username") or input("Enter your lidl plus username (phone number): ")
+    username = args.get("user") or input("Enter your lidl plus username (phone number): ")
     password = args.get("password") or getpass("Enter your lidl plus password: ")
     lidl_plus = LidlPlusApi(language, country)
     try:
         text = f"Enter the verify code you received via {args['2fa']}: "
-        lidl_plus.login(username, password, verify_token_func=lambda: input(text), verify_mode=args["2fa"])
+        lidl_plus.login(
+            username,
+            password,
+            verify_token_func=lambda: input(text),
+            verify_mode=args["2fa"],
+            headless=not args.get("debug"),
+            accept_legal_terms=not args.get("not_accept_legal_terms"),
+        )
     except WebBrowserException:
         print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
         sys.exit(101)
     except LoginError as error:
         print(f"Login failed - {error}")
         sys.exit(102)
+    except LegalTermsException as error:
+        print(f"Legal terms not accepted - {error}")
+        sys.exit(103)
     return lidl_plus
 
 

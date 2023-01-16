@@ -9,3 +9,7 @@ class WebBrowserException(Exception):
 
 class LoginError(Exception):
     """Login failed"""
+
+
+class LegalTermsException(Exception):
+    """Not accepted legal terms"""

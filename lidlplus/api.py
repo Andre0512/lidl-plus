@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-from lidlplus.exceptions import WebBrowserException, LoginError
+from lidlplus.exceptions import WebBrowserException, LoginError, LegalTermsException
 
 try:
     from getuseragent import UserAgent
@@ -143,11 +143,22 @@ class LidlPlusApi:
         params = "&".join([f"{key}={value}" for key, value in args.items()])
         return f"{self._register_oauth_client()}&{params}"
 
-    def _parse_code(self, all_request):
-        for request in reversed(all_request):
+    @staticmethod
+    def _accept_legal_terms(browser, wait, accept=True):
+        wait.until(expected_conditions.visibility_of_element_located((By.ID, "checkbox_Accepted"))).click()
+        if not accept:
+            title = browser.find_element(By.TAG_NAME, "h2").text
+            raise LegalTermsException(title)
+        browser.find_element(By.TAG_NAME, "button").click()
+
+    def _parse_code(self, browser, wait, accept_legal_terms=True):
+        for request in reversed(browser.requests):
             if f"{self._AUTH_API}/connect" not in request.url:
                 continue
             location = request.response.headers.get("Location", "")
+            if "legalTerms" in location:
+                self._accept_legal_terms(browser, wait, accept=accept_legal_terms)
+                return self._parse_code(browser, wait, False)
             if code := re.findall("code=([0-9A-F]+)", location):
                 return code[0]
         return ""
@@ -198,7 +209,7 @@ class LidlPlusApi:
         self._check_login_error(browser)
         self._check_2fa_auth(browser, wait, kwargs.get("verify_mode", "phone"), kwargs.get("verify_token_func"))
         browser.wait_for_request(f"{self._AUTH_API}/connect.*")
-        code = self._parse_code(browser.requests)
+        code = self._parse_code(browser, wait, accept_legal_terms=kwargs.get("accept_legal_terms", True))
         self._authorization_code(code)
 
     def _default_headers(self):
