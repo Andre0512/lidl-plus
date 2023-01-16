@@ -18,21 +18,25 @@ from lidlplus.exceptions import WebBrowserException, LoginError, LegalTermsExcep
 
 def get_arguments():
     """Get parsed arguments."""
-    parser = argparse.ArgumentParser(description="Lidl Plus api")
-    parser.add_argument("-c", "--country", help="country (DE, EN, FR, IT, ...)")
-    parser.add_argument("-l", "--language", help="language (de, be, nl, at, ...)")
-    parser.add_argument("-u", "--user", help="Lidl Plus login user")
-    parser.add_argument("-p", "--password", help="Lidl Plus login password")
-    parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="set 2fa method")
-    parser.add_argument("-r", "--refresh-token", help="refresh token to authenticate")
+    parser = argparse.ArgumentParser(
+        prog="lidl-plus",
+        description="Lidl Plus API",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28),
+    )
+    parser.add_argument("-c", "--country", metavar="CC", help="country (DE, BE, NL, AT, ...)")
+    parser.add_argument("-l", "--language", metavar="LANG", help="language (de, en, fr, it, ...)")
+    parser.add_argument("-u", "--user", help="Lidl Plus login username")
+    parser.add_argument("-p", "--password", metavar="XXX", help="Lidl Plus login password")
+    parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="choose two factor auth method")
+    parser.add_argument("-r", "--refresh-token", metavar="TOKEN", help="refresh token to authenticate")
     parser.add_argument("--skip-verify", help="skip ssl verification", action="store_true")
-    parser.add_argument("--not-accept-legal-terms", help="Deny legal terms updates", action="store_true")
+    parser.add_argument("--not-accept-legal-terms", help="not auto accept legal terms updates", action="store_true")
     parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
-    auth = subparser.add_parser("auth", help="authenticate and get refresh_token")
-    auth.add_argument("auth", help="authenticate and get refresh_token", action="store_true")
-    receipt = subparser.add_parser("receipt", help="last receipt as json")
-    receipt.add_argument("receipt", help="last receipt as json", action="store_true")
+    auth = subparser.add_parser("auth", help="authenticate and get token")
+    auth.add_argument("auth", help="authenticate and print refresh_token", action="store_true")
+    receipt = subparser.add_parser("receipt", help="output last receipts as json")
+    receipt.add_argument("receipt", help="output last receipts as json", action="store_true")
     receipt.add_argument("-a", "--all", help="fetch all receipts", action="store_true")
     return vars(parser.parse_args())
 
@@ -61,8 +65,8 @@ def lidl_plus_login(args):
     if args.get("skip_verify"):
         os.environ["WDM_SSL_VERIFY"] = "0"
         os.environ["CURL_CA_BUNDLE"] = ""
-    language = args.get("language") or input("Enter your language (DE, EN, ...): ")
-    country = args.get("country") or input("Enter your country (de, at, ...): ")
+    language = args.get("language") or input("Enter your language (de, en, ...): ")
+    country = args.get("country") or input("Enter your country (DE, AT, ...): ")
     if args.get("refresh_token"):
         return LidlPlusApi(language, country, args.get("refresh_token"))
     username = args.get("user") or input("Enter your lidl plus username (phone number): ")

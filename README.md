@@ -31,8 +31,8 @@ After we have received the token once, we can use it for further requestes and w
 #### Commandline-Tool
 ```bash
 $ lidl-plus auth
-Enter your language (DE, EN, ...): DE
-Enter your country (de, at, ...): de
+Enter your language (de, en, ...): de
+Enter your country (DE, AT, ...): AT
 Enter your lidl plus username (phone number): +4915784632296
 Enter your lidl plus password:
 Enter the verify code you received via phone: 590287
@@ -45,7 +45,7 @@ Enter the verify code you received via phone: 590287
 ```python
 from lidlplus import LidlPlusApi
 
-lidl = LidlPlusApi(language="DE", country="de")
+lidl = LidlPlusApi(language="de", country="AT")
 lidl.login(phone="+4915784632296", password="password", verify_token_func=lambda: input("Insert code: "))
 print(lidl.refresh_token)
 ```
@@ -78,14 +78,37 @@ Get your receipts as json and receive a list of bought items like:
 
 #### Commandline-Tool
 ```bash
-$ lidl-plus --country=de --language=DE --refresh-token=XXXXX receipt --all > data.json
+$ lidl-plus --language=de --country=AT --refresh-token=XXXXX receipt --all > data.json
 ```
 
 #### Python
 ```python
 from lidlplus import LidlPlusApi
 
-lidl = LidlPlusApi("DE", "de", refresh_token="XXXXXXXXXX")
+lidl = LidlPlusApi("de", "AT", refresh_token="XXXXXXXXXX")
 for receipt in lidl.tickets():
     pprint(lidl.ticket(receipt["id"]))
+```
+
+## Help
+#### Commandline-Tool
+```commandline
+Lidl Plus API
+
+options:
+  -h, --help                show this help message and exit
+  -c CC, --country CC       country (DE, BE, NL, AT, ...)
+  -l LANG, --language LANG  language (de, en, fr, it, ...)
+  -u USER, --user USER      Lidl Plus login username
+  -p XXX, --password XXX    Lidl Plus login password
+  --2fa {phone,email}       choose two factor auth method
+  -r TOKEN, --refresh-token TOKEN
+                            refresh token to authenticate
+  --skip-verify             skip ssl verification
+  --not-accept-legal-terms  not auto accept legal terms updates
+  -d, --debug               debug mode
+
+commands:
+  auth                      authenticate and get token
+  receipt                   output last receipts as json
 ```
