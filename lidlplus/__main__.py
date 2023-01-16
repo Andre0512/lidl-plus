@@ -4,6 +4,7 @@ lidl plus command line tool
 """
 import argparse
 import json
+import os
 import sys
 from getpass import getpass
 from pathlib import Path
@@ -24,6 +25,7 @@ def get_arguments():
     parser.add_argument("-p", "--password", help="Lidl Plus login password")
     parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="set 2fa method")
     parser.add_argument("-r", "--refresh-token", help="refresh token to authenticate")
+    parser.add_argument("--skip-verify", help="skip ssl verification", action="store_true")
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get refresh_token")
     auth.add_argument("auth", help="authenticate and get refresh_token", action="store_true")
@@ -52,13 +54,17 @@ def check_auth():
 
 def lidl_plus_login(args):
     """handle authentication"""
+    if not args.get("refresh_token"):
+        check_auth()
+    if args.get("skip_verify"):
+        os.environ["WDM_SSL_VERIFY"] = "0"
+        os.environ["CURL_CA_BUNDLE"] = ""
     language = args.get("language") or input("Enter your language (DE, EN, ...): ")
     country = args.get("country") or input("Enter your country (de, at, ...): ")
     if args.get("refresh_token"):
         return LidlPlusApi(language, country, args.get("refresh_token"))
     username = args.get("username") or input("Enter your lidl plus username (phone number): ")
     password = args.get("password") or getpass("Enter your lidl plus password: ")
-    check_auth()
     lidl_plus = LidlPlusApi(language, country)
     try:
         text = f"Enter the verify code you received via {args['2fa']}: "
