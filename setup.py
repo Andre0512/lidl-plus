@@ -11,7 +11,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="lidl-plus",
-    version="0.2.4",
+    version="0.2.5",
     author="Andre Basche",
     description="Fetch receipts and more from Lidl Plus",
     long_description=long_description,
@@ -22,7 +22,7 @@ setup(
     },
     license="MIT",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",

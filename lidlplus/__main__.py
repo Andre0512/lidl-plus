@@ -27,10 +27,19 @@ def get_arguments():
     parser.add_argument("-l", "--language", metavar="LANG", help="language (de, en, fr, it, ...)")
     parser.add_argument("-u", "--user", help="Lidl Plus login username")
     parser.add_argument("-p", "--password", metavar="XXX", help="Lidl Plus login password")
-    parser.add_argument("--2fa", choices=["phone", "email"], default="phone", help="choose two factor auth method")
+    parser.add_argument(
+        "--2fa",
+        choices=["phone", "email"],
+        default="phone",
+        help="choose two factor auth method",
+    )
     parser.add_argument("-r", "--refresh-token", metavar="TOKEN", help="refresh token to authenticate")
     parser.add_argument("--skip-verify", help="skip ssl verification", action="store_true")
-    parser.add_argument("--not-accept-legal-terms", help="not auto accept legal terms updates", action="store_true")
+    parser.add_argument(
+        "--not-accept-legal-terms",
+        help="not auto accept legal terms updates",
+        action="store_true",
+    )
     parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get token")

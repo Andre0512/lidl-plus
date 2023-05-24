@@ -9,7 +9,12 @@ from datetime import datetime, timedelta
 
 import requests
 
-from lidlplus.exceptions import WebBrowserException, LoginError, LegalTermsException
+from lidlplus.exceptions import (
+    WebBrowserException,
+    LoginError,
+    LegalTermsException,
+    MissingLogin,
+)
 
 try:
     from getuseragent import UserAgent
@@ -57,7 +62,6 @@ class LidlPlusApi:
         return self._token
 
     def _register_oauth_client(self):
-
         if self._login_url:
             return self._login_url
         client = Client(client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID)
@@ -84,7 +88,6 @@ class LidlPlusApi:
         return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
 
     def _init_firefox(self, headless=True):
-
         user_agent = UserAgent(self._OS.lower()).Random()
         logging.getLogger("WDM").setLevel(logging.NOTSET)
         options = webdriver.FirefoxOptions()
@@ -203,11 +206,20 @@ class LidlPlusApi:
         wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
         wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
         self._click(browser, (By.ID, "button_btn_submit_email"))
-        self._click(browser, (By.ID, "button_btn_submit_email"), request=f"{self._AUTH_API}/api/phone/exists.*")
+        self._click(
+            browser,
+            (By.ID, "button_btn_submit_email"),
+            request=f"{self._AUTH_API}/api/phone/exists.*",
+        )
         wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
         self._click(browser, (By.ID, "button_submit"))
         self._check_login_error(browser)
-        self._check_2fa_auth(browser, wait, kwargs.get("verify_mode", "phone"), kwargs.get("verify_token_func"))
+        self._check_2fa_auth(
+            browser,
+            wait,
+            kwargs.get("verify_mode", "phone"),
+            kwargs.get("verify_token_func"),
+        )
         browser.wait_for_request(f"{self._AUTH_API}/connect.*")
         code = self._parse_code(browser, wait, accept_legal_terms=kwargs.get("accept_legal_terms", True))
         self._authorization_code(code)
@@ -216,7 +228,7 @@ class LidlPlusApi:
         if (not self._token and self._refresh_token) or datetime.utcnow() >= self._expires:
             self._renew_token()
         if not self._token:
-            raise Exception("You need to login!")
+            raise MissingLogin("You need to login!")
         return {
             "Authorization": f"Bearer {self._token}",
             "App-Version": "999.99.9",

@@ -13,3 +13,7 @@ class LoginError(Exception):
 
 class LegalTermsException(Exception):
     """Not accepted legal terms"""
+
+
+class MissingLogin(Exception):
+    """Login necessary"""
