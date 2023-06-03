@@ -37,7 +37,7 @@ class LidlPlusApi:
 
     _CLIENT_ID = "LidlPlusNativeClient"
     _AUTH_API = "https://accounts.lidl.com"
-    _TICKET_API = "https://tickets.lidlplus.com/api/v1"
+    _TICKET_API = "https://tickets.lidlplus.com/api/v2"
     _APP = "com.lidlplus.app"
     _OS = "iOs"
     _TIMEOUT = 10
@@ -239,12 +239,12 @@ class LidlPlusApi:
 
     def tickets(self):
         """Get list of all tickets"""
-        url = f"{self._TICKET_API}/{self._country}/list"
+        url = f"{self._TICKET_API}/{self._country}/tickets"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        ticket = requests.get(f"{url}/1", **kwargs).json()
-        tickets = ticket["records"]
+        ticket = requests.get(f"{url}?pageNumber=1", **kwargs).json()
+        tickets = ticket["tickets"]
         for i in range(2, int(ticket["totalCount"] / ticket["size"] + 2)):
-            tickets += requests.get(f"{url}/{i}", **kwargs).json()["records"]
+            tickets += requests.get(f"{url}?pageNumber={i}", **kwargs).json()["tickets"]
         return tickets
 
     def ticket(self, ticket_id):
