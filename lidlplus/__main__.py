@@ -8,6 +8,7 @@ import os
 import sys
 from getpass import getpass
 from pathlib import Path
+from datetime import datetime
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -47,6 +48,9 @@ def get_arguments():
     receipt = subparser.add_parser("receipt", help="output last receipts as json")
     receipt.add_argument("receipt", help="output last receipts as json", action="store_true")
     receipt.add_argument("-a", "--all", help="fetch all receipts", action="store_true")
+    coupon = subparser.add_parser("coupon", help="activate coupons")
+    coupon.add_argument("coupon", help="activate coupons", action="store_true")
+    coupon.add_argument("-a", "--all", help="activate all coupons", action="store_true", required=True)
     return vars(parser.parse_args())
 
 
@@ -119,6 +123,24 @@ def print_tickets(args):
         tickets = lidl_plus.ticket(lidl_plus.tickets()[0]["id"])
     print(json.dumps(tickets, indent=4))
 
+def activate_coupons(args):
+    """Activate all available coupons"""
+    lidl_plus = lidl_plus_login(args)
+    if not args.get("all"):
+        return
+    i = 0
+    for section in lidl_plus.coupons()["sections"]:
+        for coupon in section["coupons"]:
+            if coupon["isActivated"]:
+                continue
+            if datetime.fromisoformat(coupon["startValidityDate"]).timestamp() > datetime.now().timestamp():
+                continue
+            if datetime.fromisoformat(coupon["endValidityDate"]).timestamp() < datetime.now().timestamp():
+                continue
+            print("activating coupon: ", coupon["title"])
+            lidl_plus.activate_coupon(coupon["id"])
+            i = i + 1
+    print(f"Activated {i} coupons")
 
 def main():
     """argument commands"""
@@ -127,6 +149,8 @@ def main():
         print_refresh_token(args)
     elif args.get("receipt"):
         print_tickets(args)
+    elif args.get("coupon"):
+        activate_coupons(args)
 
 
 def start():
