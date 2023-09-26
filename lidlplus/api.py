@@ -38,6 +38,7 @@ class LidlPlusApi:
     _CLIENT_ID = "LidlPlusNativeClient"
     _AUTH_API = "https://accounts.lidl.com"
     _TICKET_API = "https://tickets.lidlplus.com/api/v2"
+    _COUPONS_API = "https://coupons.lidlplus.com/api"
     _APP = "com.lidlplus.app"
     _OS = "iOs"
     _TIMEOUT = 10
@@ -252,3 +253,21 @@ class LidlPlusApi:
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         url = f"{self._TICKET_API}/{self._country}/tickets"
         return requests.get(f"{url}/{ticket_id}", **kwargs).json()
+
+    def coupons(self):
+        """Get list of all coupons"""
+        url = f"{self._COUPONS_API}/v2/{self._country}"
+        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
+        return requests.get(url, **kwargs).json()
+
+    def activate_coupon(self, coupon_id):
+        """Activate single coupon by id"""
+        url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
+        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
+        return requests.post(url, **kwargs).json()
+
+    def deactivate_coupon(self, coupon_id):
+        """Deactivate single coupon by id"""
+        url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
+        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
+        return requests.delete(url, **kwargs).json()
