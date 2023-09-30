@@ -129,8 +129,8 @@ def activate_coupons(args):
     if not args.get("all"):
         return
     i = 0
-    for section in lidl_plus.coupons()["sections"]:
-        for coupon in section["coupons"]:
+    for section in lidl_plus.coupons().get("sections", {}):
+        for coupon in section.get("coupons", {}):
             if coupon["isActivated"]:
                 continue
             if datetime.fromisoformat(coupon["startValidityDate"]) > datetime.now():
