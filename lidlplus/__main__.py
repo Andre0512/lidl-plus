@@ -133,9 +133,9 @@ def activate_coupons(args):
         for coupon in section["coupons"]:
             if coupon["isActivated"]:
                 continue
-            if datetime.fromisoformat(coupon["startValidityDate"]).timestamp() > datetime.now().timestamp():
+            if datetime.fromisoformat(coupon["startValidityDate"]) > datetime.now():
                 continue
-            if datetime.fromisoformat(coupon["endValidityDate"]).timestamp() < datetime.now().timestamp():
+            if datetime.fromisoformat(coupon["endValidityDate"]) < datetime.now():
                 continue
             print("activating coupon: ", coupon["title"])
             lidl_plus.activate_coupon(coupon["id"])
