@@ -66,7 +66,9 @@ class LidlPlusApi:
     def _register_oauth_client(self):
         if self._login_url:
             return self._login_url
-        client = Client(client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID)
+        client = Client(
+            client_authn_method=CLIENT_AUTHN_METHOD, client_id=self._CLIENT_ID
+        )
         client.provider_config(self._AUTH_API)
         code_challenge, self._code_verifier = client.add_code_challenge()
         args = {
@@ -87,7 +89,9 @@ class LidlPlusApi:
         if headless:
             options.add_argument("headless")
         options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
-        return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        return webdriver.Chrome(
+            service=ChromeService(ChromeDriverManager().install()), options=options
+        )
 
     def _init_firefox(self, headless=True):
         user_agent = UserAgent(self._OS.lower()).Random()
@@ -150,7 +154,11 @@ class LidlPlusApi:
 
     @staticmethod
     def _accept_legal_terms(browser, wait, accept=True):
-        wait.until(expected_conditions.visibility_of_element_located((By.ID, "checkbox_Accepted"))).click()
+        wait.until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, "checkbox_Accepted")
+            )
+        ).click()
         if not accept:
             title = browser.find_element(By.TAG_NAME, "h2").text
             raise LegalTermsException(title)
@@ -184,23 +192,41 @@ class LidlPlusApi:
                     raise LoginError(error.text)
 
     def _check_login_error(self, browser):
-        response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 10).response
-        body = html.unescape(decode(response.body, response.headers.get("Content-Encoding", "identity")).decode())
+        response = browser.wait_for_request(
+            f"{self._AUTH_API}/Account/Login.*", 10
+        ).response
+        body = html.unescape(
+            decode(
+                response.body, response.headers.get("Content-Encoding", "identity")
+            ).decode()
+        )
         if error := re.findall('app-errors="\\{[^:]*?:.(.*?).}', body):
             raise LoginError(error[0])
 
-    def _check_2fa_auth(self, browser, wait, verify_mode="phone", verify_token_func=None):
+    def _check_2fa_auth(
+        self, browser, wait, verify_mode="phone", verify_token_func=None
+    ):
         if verify_mode not in ["phone", "email"]:
-            raise ValueError(f'Unknown 2fa-mode "{verify_mode}" - Only "phone" or "email" supported')
-        response = browser.wait_for_request(f"{self._AUTH_API}/Account/Login.*", 10).response
+            raise ValueError(
+                f'Unknown 2fa-mode "{verify_mode}" - Only "phone" or "email" supported'
+            )
+        response = browser.wait_for_request(
+            f"{self._AUTH_API}/Account/Login.*", 10
+        ).response
         if "/connect/authorize/callback" not in response.headers.get("Location"):
-            element = wait.until(expected_conditions.visibility_of_element_located((By.CLASS_NAME, verify_mode)))
+            element = wait.until(
+                expected_conditions.visibility_of_element_located(
+                    (By.CLASS_NAME, verify_mode)
+                )
+            )
             element.find_element(By.TAG_NAME, "button").click()
             verify_code = verify_token_func()
             browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
             self._click(browser, (By.CLASS_NAME, "role_next"))
 
-    def _switch_coupon_activation(self, coupon_id: str, action: Literal["activate", "deactivate"]):
+    def _switch_coupon_activation(
+        self, coupon_id: str, action: Literal["activate", "deactivate"]
+    ):
         url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         if action == "activate":
@@ -208,22 +234,32 @@ class LidlPlusApi:
         elif action == "deactivate":
             return requests.delete(url, **kwargs).json()
         else:
-            raise ValueError(f'Unknown action "{action}" - Only "activate" or "deactivate" supported')
+            raise ValueError(
+                f'Unknown action "{action}" - Only "activate" or "deactivate" supported'
+            )
 
     def login(self, phone, password, **kwargs):
         """Simulate app auth"""
         browser = self._get_browser(headless=kwargs.get("headless", True))
         browser.get(self._register_link)
         wait = WebDriverWait(browser, 10)
-        wait.until(expected_conditions.visibility_of_element_located((By.ID, "button_welcome_login"))).click()
-        wait.until(expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))).send_keys(phone)
+        wait.until(
+            expected_conditions.visibility_of_element_located(
+                (By.ID, "button_welcome_login")
+            )
+        ).click()
+        wait.until(
+            expected_conditions.visibility_of_element_located((By.NAME, "EmailOrPhone"))
+        ).send_keys(phone)
         self._click(browser, (By.ID, "button_btn_submit_email"))
         self._click(
             browser,
             (By.ID, "button_btn_submit_email"),
             request=f"{self._AUTH_API}/api/phone/exists.*",
         )
-        wait.until(expected_conditions.element_to_be_clickable((By.ID, "field_Password"))).send_keys(password)
+        wait.until(
+            expected_conditions.element_to_be_clickable((By.ID, "field_Password"))
+        ).send_keys(password)
         self._click(browser, (By.ID, "button_submit"))
         self._check_login_error(browser)
         self._check_2fa_auth(
@@ -233,11 +269,15 @@ class LidlPlusApi:
             kwargs.get("verify_token_func"),
         )
         browser.wait_for_request(f"{self._AUTH_API}/connect.*")
-        code = self._parse_code(browser, wait, accept_legal_terms=kwargs.get("accept_legal_terms", True))
+        code = self._parse_code(
+            browser, wait, accept_legal_terms=kwargs.get("accept_legal_terms", True)
+        )
         self._authorization_code(code)
 
     def _default_headers(self):
-        if (not self._token and self._refresh_token) or datetime.utcnow() >= self._expires:
+        if (
+            not self._token and self._refresh_token
+        ) or datetime.utcnow() >= self._expires:
             self._renew_token()
         if not self._token:
             raise MissingLogin("You need to login!")
