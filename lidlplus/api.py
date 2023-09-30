@@ -6,6 +6,7 @@ import html
 import logging
 import re
 from datetime import datetime, timedelta
+from typing import Literal
 
 import requests
 
@@ -199,6 +200,16 @@ class LidlPlusApi:
             browser.find_element(By.NAME, "VerificationCode").send_keys(verify_code)
             self._click(browser, (By.CLASS_NAME, "role_next"))
 
+    def _switch_coupon_activation(self, coupon_id: str, action: Literal["activate", "deactivate"]):
+        url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
+        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
+        if action == "activate":
+            return requests.post(url, **kwargs).json()
+        elif action == "deactivate":
+            return requests.delete(url, **kwargs).json()
+        else:
+            raise ValueError(f'Unknown action "{action}" - Only "activate" or "deactivate" supported')
+
     def login(self, phone, password, **kwargs):
         """Simulate app auth"""
         browser = self._get_browser(headless=kwargs.get("headless", True))
@@ -260,14 +271,10 @@ class LidlPlusApi:
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         return requests.get(url, **kwargs).json()
 
-    def activate_coupon(self, coupon_id):
+    def activate_coupon(self, coupon_id: str):
         """Activate single coupon by id"""
-        url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
-        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        return requests.post(url, **kwargs).json()
+        return self._switch_coupon_activation(coupon_id, "activate")
 
-    def deactivate_coupon(self, coupon_id):
+    def deactivate_coupon(self, coupon_id: str):
         """Deactivate single coupon by id"""
-        url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
-        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        return requests.delete(url, **kwargs).json()
+        return self._switch_coupon_activation(coupon_id, "deactivate")
