@@ -24,51 +24,33 @@ def get_arguments():
         description="Lidl Plus API",
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=28),
     )
-    parser.add_argument(
-        "-c", "--country", metavar="CC", help="country (DE, BE, NL, AT, ...)"
-    )
-    parser.add_argument(
-        "-l", "--language", metavar="LANG", help="language (de, en, fr, it, ...)"
-    )
+    parser.add_argument("-c", "--country", metavar="CC", help="country (DE, BE, NL, AT, ...)")
+    parser.add_argument("-l", "--language", metavar="LANG", help="language (de, en, fr, it, ...)")
     parser.add_argument("-u", "--user", help="Lidl Plus login username")
-    parser.add_argument(
-        "-p", "--password", metavar="XXX", help="Lidl Plus login password"
-    )
+    parser.add_argument("-p", "--password", metavar="XXX", help="Lidl Plus login password")
     parser.add_argument(
         "--2fa",
         choices=["phone", "email"],
         default="phone",
         help="choose two factor auth method",
     )
-    parser.add_argument(
-        "-r", "--refresh-token", metavar="TOKEN", help="refresh token to authenticate"
-    )
-    parser.add_argument(
-        "--skip-verify", help="skip ssl verification", action="store_true"
-    )
+    parser.add_argument("-r", "--refresh-token", metavar="TOKEN", help="refresh token to authenticate")
+    parser.add_argument("--skip-verify", help="skip ssl verification", action="store_true")
     parser.add_argument(
         "--not-accept-legal-terms",
         help="not auto accept legal terms updates",
         action="store_true",
     )
     parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
-    subparser = parser.add_subparsers(
-        title="commands", metavar="command", required=True
-    )
+    subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get token")
-    auth.add_argument(
-        "auth", help="authenticate and print refresh_token", action="store_true"
-    )
+    auth.add_argument("auth", help="authenticate and print refresh_token", action="store_true")
     receipt = subparser.add_parser("receipt", help="output last receipts as json")
-    receipt.add_argument(
-        "receipt", help="output last receipts as json", action="store_true"
-    )
+    receipt.add_argument("receipt", help="output last receipts as json", action="store_true")
     receipt.add_argument("-a", "--all", help="fetch all receipts", action="store_true")
     coupon = subparser.add_parser("coupon", help="activate coupons")
     coupon.add_argument("coupon", help="activate coupons", action="store_true")
-    coupon.add_argument(
-        "-a", "--all", help="activate all coupons", action="store_true", required=True
-    )
+    coupon.add_argument("-a", "--all", help="activate all coupons", action="store_true", required=True)
     return vars(parser.parse_args())
 
 
@@ -100,9 +82,7 @@ def lidl_plus_login(args):
     country = args.get("country") or input("Enter your country (DE, AT, ...): ")
     if args.get("refresh_token"):
         return LidlPlusApi(language, country, args.get("refresh_token"))
-    username = args.get("user") or input(
-        "Enter your lidl plus username (phone number): "
-    )
+    username = args.get("user") or input("Enter your lidl plus username (phone number): ")
     password = args.get("password") or getpass("Enter your lidl plus password: ")
     lidl_plus = LidlPlusApi(language, country)
     try:
@@ -116,9 +96,7 @@ def lidl_plus_login(args):
             accept_legal_terms=not args.get("not_accept_legal_terms"),
         )
     except WebBrowserException:
-        print(
-            "Can't connect to web browser. Please install Chrome, Chromium or Firefox"
-        )
+        print("Can't connect to web browser. Please install Chrome, Chromium or Firefox")
         sys.exit(101)
     except LoginError as error:
         print(f"Login failed - {error}")
@@ -133,11 +111,7 @@ def print_refresh_token(args):
     """pretty print refresh token"""
     lidl_plus = lidl_plus_login(args)
     length = len(token := lidl_plus.refresh_token) - len("refresh token")
-    print(
-        f"{'-' * (length // 2)} refresh token {'-' * (length // 2 - 1)}\n"
-        f"{token}\n"
-        f"{'-' * len(token)}"
-    )
+    print(f"{'-' * (length // 2)} refresh token {'-' * (length // 2 - 1)}\n" f"{token}\n" f"{'-' * len(token)}")
 
 
 def print_tickets(args):
