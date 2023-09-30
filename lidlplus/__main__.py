@@ -139,7 +139,7 @@ def activate_coupons(args):
                 continue
             print("activating coupon: ", coupon["title"])
             lidl_plus.activate_coupon(coupon["id"])
-            i = i + 1
+            i += 1
     print(f"Activated {i} coupons")
 
 def main():
