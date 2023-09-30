@@ -123,6 +123,7 @@ def print_tickets(args):
         tickets = lidl_plus.ticket(lidl_plus.tickets()[0]["id"])
     print(json.dumps(tickets, indent=4))
 
+
 def activate_coupons(args):
     """Activate all available coupons"""
     lidl_plus = lidl_plus_login(args)
@@ -141,6 +142,7 @@ def activate_coupons(args):
             lidl_plus.activate_coupon(coupon["id"])
             i += 1
     print(f"Activated {i} coupons")
+
 
 def main():
     """argument commands"""
