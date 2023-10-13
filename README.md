@@ -7,6 +7,8 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/lidl-plus)](https://www.python.org/)
 [![PyPI - License](https://img.shields.io/pypi/l/lidl-plus)](https://github.com/Andre0512/lidl-plus/blob/main/LICENCE)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/lidl-plus)](https://pypistats.org/packages/lidl-plus)
+[![Buy Me a Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-orange.svg)](https://www.buymeacoffee.com/andre0512)  
+
 
 Fetch receipts and more from Lidl Plus.
 ## Installation
@@ -179,3 +181,10 @@ commands:
   receipt                   output last receipts as json
   coupon                    activate coupons
 ```
+
+## Support
+If you find this project helpful and would like to support its development, you can buy me a coffee! ☕
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/andre0512)
+
+Don't forget to star the repository if you found it useful! ⭐
