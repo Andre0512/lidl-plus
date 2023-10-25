@@ -238,11 +238,18 @@ class LidlPlusApi:
             "Accept-Language": self._language,
         }
 
-    def tickets(self):
-        """Get list of all tickets"""
+    def tickets(self, only_favorite=False):
+        """
+        Get a list of all tickets.
+
+        :param onlyFavorite: A boolean value indicating whether to only retrieve favorite tickets.
+            If set to True, only favorite tickets will be returned.
+            If set to False (the default), all tickets will be retrieved.
+        :type onlyFavorite: bool
+        """
         url = f"{self._TICKET_API}/{self._country}/tickets"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        ticket = requests.get(f"{url}?pageNumber=1", **kwargs).json()
+        ticket = requests.get(f"{url}?pageNumber=1&onlyFavorite={only_favorite}", **kwargs).json()
         tickets = ticket["tickets"]
         for i in range(2, int(ticket["totalCount"] / ticket["size"] + 2)):
             tickets += requests.get(f"{url}?pageNumber={i}", **kwargs).json()["tickets"]
