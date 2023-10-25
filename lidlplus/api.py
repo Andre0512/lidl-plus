@@ -238,7 +238,7 @@ class LidlPlusApi:
             "Accept-Language": self._language,
         }
 
-    def tickets(self, onlyFavorite=False):
+    def tickets(self, only_favorite=False):
         """
         Get a list of all tickets.
 
@@ -249,7 +249,7 @@ class LidlPlusApi:
         """
         url = f"{self._TICKET_API}/{self._country}/tickets"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        ticket = requests.get(f"{url}?pageNumber=1&onlyFavorite={onlyFavorite}", **kwargs).json()
+        ticket = requests.get(f"{url}?pageNumber=1&onlyFavorite={only_favorite}", **kwargs).json()
         tickets = ticket["tickets"]
         for i in range(2, int(ticket["totalCount"] / ticket["size"] + 2)):
             tickets += requests.get(f"{url}?pageNumber={i}", **kwargs).json()["tickets"]
