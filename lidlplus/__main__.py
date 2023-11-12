@@ -45,6 +45,8 @@ def get_arguments():
     subparser = parser.add_subparsers(title="commands", metavar="command", required=True)
     auth = subparser.add_parser("auth", help="authenticate and get token")
     auth.add_argument("auth", help="authenticate and print refresh_token", action="store_true")
+    loyalty_id = subparser.add_parser("id", help="show loyalty ID")
+    loyalty_id.add_argument("id", help="show loyalty ID", action="store_true")
     receipt = subparser.add_parser("receipt", help="output last receipts as json")
     receipt.add_argument("receipt", help="output last receipts as json", action="store_true")
     receipt.add_argument("-a", "--all", help="fetch all receipts", action="store_true")
@@ -114,6 +116,12 @@ def print_refresh_token(args):
     print(f"{'-' * (length // 2)} refresh token {'-' * (length // 2 - 1)}\n" f"{token}\n" f"{'-' * len(token)}")
 
 
+def print_loyalty_id(args):
+    """print loyalty ID"""
+    lidl_plus = lidl_plus_login(args)
+    print(lidl_plus.loyalty_id())
+
+
 def print_tickets(args):
     """pretty print as json"""
     lidl_plus = lidl_plus_login(args)
@@ -149,6 +157,8 @@ def main():
     args = get_arguments()
     if args.get("auth"):
         print_refresh_token(args)
+    elif args.get("id"):
+        print_loyalty_id(args)
     elif args.get("receipt"):
         print_tickets(args)
     elif args.get("coupon"):

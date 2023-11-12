@@ -39,6 +39,7 @@ class LidlPlusApi:
     _AUTH_API = "https://accounts.lidl.com"
     _TICKET_API = "https://tickets.lidlplus.com/api/v2"
     _COUPONS_API = "https://coupons.lidlplus.com/api"
+    _PROFILE_API = "https://profile.lidlplus.com/profile/api"
     _APP = "com.lidlplus.app"
     _OS = "iOs"
     _TIMEOUT = 10
@@ -278,3 +279,11 @@ class LidlPlusApi:
         url = f"{self._COUPONS_API}/v1/{self._country}/{coupon_id}/activation"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         return requests.delete(url, **kwargs).json()
+
+    def loyalty_id(self):
+        """Get your loyalty ID"""
+        url = f"{self._PROFILE_API}/v1/{self._country}/loyalty"
+        kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
+        response = requests.get(url, **kwargs)
+        response.raise_for_status()
+        return response.text
