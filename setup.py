@@ -31,14 +31,24 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     platforms="any",
     packages=find_packages(),
     include_package_data=True,
     python_requires=">=3.8",
-    install_requires=["requests"],
-    extras_require={"auth": ["selenium-wire", "webdriver-manager", "getuseragent", "oic"]},
+    install_requires=[
+        "requests>=2.28.1",
+    ],
+    extras_require={
+        "auth": [
+            "getuseragent>=0.0.7",
+            "oic>=1.4.0",
+            "selenium-wire>=5.1.0",
+            "webdriver-manager>=3.8.5",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "lidl-plus = lidlplus.__main__:start",
