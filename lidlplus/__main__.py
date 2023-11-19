@@ -51,8 +51,8 @@ def get_arguments():
     receipt.add_argument("receipt", help="output last receipts as json", action="store_true")
     receipt.add_argument("-a", "--all", help="fetch all receipts", action="store_true")
     coupon = subparser.add_parser("coupon", help="activate coupons")
-    coupon.add_argument("coupon", help="activate coupons", action="store_true")
-    coupon.add_argument("-a", "--all", help="activate all coupons", action="store_true", required=True)
+    coupon.add_argument("coupon", help="output all coupons", action="store_true")
+    coupon.add_argument("-a", "--all", help="activate all coupons", action="store_true")
     return vars(parser.parse_args())
 
 
@@ -135,10 +135,12 @@ def print_tickets(args):
 def activate_coupons(args):
     """Activate all available coupons"""
     lidl_plus = lidl_plus_login(args)
+    coupons = lidl_plus.coupons()
     if not args.get("all"):
+        print(json.dumps(coupons, indent=4))
         return
     i = 0
-    for section in lidl_plus.coupons().get("sections", {}):
+    for section in coupons.get("sections", {}):
         for coupon in section.get("coupons", {}):
             if coupon["isActivated"]:
                 continue
