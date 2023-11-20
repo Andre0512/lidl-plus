@@ -8,7 +8,7 @@ import os
 import sys
 from getpass import getpass
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -144,9 +144,9 @@ def activate_coupons(args):
         for coupon in section.get("coupons", {}):
             if coupon["isActivated"]:
                 continue
-            if datetime.fromisoformat(coupon["startValidityDate"]) > datetime.now():
+            if datetime.fromisoformat(coupon["startValidityDate"]) > datetime.now(timezone.utc):
                 continue
-            if datetime.fromisoformat(coupon["endValidityDate"]) < datetime.now():
+            if datetime.fromisoformat(coupon["endValidityDate"]) < datetime.now(timezone.utc):
                 continue
             print("activating coupon: ", coupon["title"])
             lidl_plus.activate_coupon(coupon["id"])
