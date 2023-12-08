@@ -20,7 +20,7 @@ try:
     from getuseragent import UserAgent
     from oic.oic import Client
     from oic.utils.authn.client import CLIENT_AUTHN_METHOD
-    from selenium.webdriver.chrome.service import Service as ChromeService
+    from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions
     from selenium.webdriver.support.ui import WebDriverWait
@@ -28,6 +28,7 @@ try:
     from seleniumwire.utils import decode
     from webdriver_manager.chrome import ChromeDriverManager
     from webdriver_manager.firefox import GeckoDriverManager
+    from webdriver_manager.core.os_manager import ChromeType
 except ImportError:
     pass
 
@@ -87,7 +88,13 @@ class LidlPlusApi:
         if headless:
             options.add_argument("headless")
         options.add_experimental_option("mobileEmulation", {"userAgent": user_agent})
-        return webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        for chrome_type in [ChromeType.GOOGLE, ChromeType.MSEDGE, ChromeType.CHROMIUM]:
+            try:
+                service = Service(ChromeDriverManager(chrome_type=chrome_type).install())
+                return webdriver.Chrome(service=service, options=options)
+            except AttributeError:
+                continue
+        raise WebBrowserException("Unable to find a suitable Chrome driver")
 
     def _init_firefox(self, headless=True):
         user_agent = UserAgent(self._OS.lower()).Random()

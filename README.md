@@ -26,6 +26,7 @@ After we have received the token once, we can use it for further requestes and w
   - Chromium
   - Google Chrome
   - Mozilla Firefox
+  - Microsoft Edge
 * Install additional python packages
   ```bash
   pip install "lidl-plus[auth]"
