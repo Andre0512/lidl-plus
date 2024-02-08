@@ -1,6 +1,7 @@
 """
 Lidl Plus api
 """
+
 import base64
 import html
 import logging
@@ -40,6 +41,7 @@ class LidlPlusApi:
     _AUTH_API = "https://accounts.lidl.com"
     _TICKET_API = "https://tickets.lidlplus.com/api/v2"
     _COUPONS_API = "https://coupons.lidlplus.com/api"
+    _COUPONS_V1_API = "https://coupons.lidlplus.com/app/api/"
     _PROFILE_API = "https://profile.lidlplus.com/profile/api"
     _APP = "com.lidlplus.app"
     _OS = "iOs"
@@ -268,6 +270,18 @@ class LidlPlusApi:
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         url = f"{self._TICKET_API}/{self._country}/tickets"
         return requests.get(f"{url}/{ticket_id}", **kwargs).json()
+
+    def coupon_promotions_v1(self):
+        """Get list of all coupons API V1"""
+        url = f"{self._COUPONS_V1_API}/v1/promotionslist"
+        kwargs = {"headers": {**self._default_headers(), "Country": self._country}, "timeout": self._TIMEOUT}
+        return requests.get(url, **kwargs).json()
+
+    def activate_coupon_promotion_v1(self, promotion_id):
+        """Activate single coupon by id API V1"""
+        url = f"{self._COUPONS_V1_API}/v1/promotions/{promotion_id}/activation"
+        kwargs = {"headers": {**self._default_headers(), "Country": self._country}, "timeout": self._TIMEOUT}
+        return requests.post(url, **kwargs)
 
     def coupons(self):
         """Get list of all coupons"""
