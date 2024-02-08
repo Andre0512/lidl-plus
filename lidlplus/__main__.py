@@ -162,7 +162,7 @@ def activate_coupons(args):
                 continue
             if datetime.fromisoformat(validity["end"]) < datetime.now(timezone.utc):
                 continue
-            print("activating coupon: ", coupon["title"])
+            print("activating coupon v1: ", coupon["title"])
             lidl_plus.activate_coupon_promotion_v1(coupon["promotionId"])
             i += 1
     print(f"Activated {i} coupons")
