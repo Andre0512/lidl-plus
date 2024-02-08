@@ -1,6 +1,7 @@
 """
 Lidl Plus api
 """
+
 import base64
 import html
 import logging
