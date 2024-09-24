@@ -7,6 +7,7 @@ import html
 import logging
 import re
 from datetime import datetime, timedelta
+from json import JSONDecodeError
 
 import requests
 
@@ -16,6 +17,7 @@ from lidlplus.exceptions import (
     LegalTermsException,
     MissingLogin,
 )
+from lidlplus.html_receipt import parse_html_receipt
 
 try:
     from getuseragent import UserAgent
@@ -39,7 +41,7 @@ class LidlPlusApi:
 
     _CLIENT_ID = "LidlPlusNativeClient"
     _AUTH_API = "https://accounts.lidl.com"
-    _TICKET_API = "https://tickets.lidlplus.com/api/v2"
+    _TICKET_API = "https://tickets.lidlplus.com/api"
     _COUPONS_API = "https://coupons.lidlplus.com/api"
     _COUPONS_V1_API = "https://coupons.lidlplus.com/app/api/"
     _PROFILE_API = "https://profile.lidlplus.com/profile/api"
@@ -257,7 +259,7 @@ class LidlPlusApi:
             If set to False (the default), all tickets will be retrieved.
         :type onlyFavorite: bool
         """
-        url = f"{self._TICKET_API}/{self._country}/tickets"
+        url = f"{self._TICKET_API}/v2/{self._country}/tickets"
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
         ticket = requests.get(f"{url}?pageNumber=1&onlyFavorite={only_favorite}", **kwargs).json()
         tickets = ticket["tickets"]
@@ -268,8 +270,16 @@ class LidlPlusApi:
     def ticket(self, ticket_id):
         """Get full data of single ticket by id"""
         kwargs = {"headers": self._default_headers(), "timeout": self._TIMEOUT}
-        url = f"{self._TICKET_API}/{self._country}/tickets"
-        return requests.get(f"{url}/{ticket_id}", **kwargs).json()
+        url = f"{self._TICKET_API}/v2/{self._country}/tickets/{ticket_id}"
+        try:
+            return requests.get(url, **kwargs).json()
+        except JSONDecodeError:
+            url = f"{self._TICKET_API}/v3/{self._country}/tickets/{ticket_id}"
+            receipt_json = requests.get(url, **kwargs).json()
+            return parse_html_receipt(
+                date=receipt_json["date"],
+                html_receipt=receipt_json["htmlPrintedReceipt"],
+            )
 
     def coupon_promotions_v1(self):
         """Get list of all coupons API V1"""
